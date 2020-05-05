@@ -1,0 +1,20 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group 'shchuko.git_fast_reword'
+version '1.0'
+
+application {
+    mainClassName = 'shchuko.git_fast_reword.Main'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '2.2.0.201212191850-r'
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
