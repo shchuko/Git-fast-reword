@@ -14,7 +14,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 /**
- * An utility to do fast git commit messages' reword
+ * A utility to do fast git commit messages' reword
  *
  * @author Vladislav Yaroahshchuk (yaroshchuk2000@gmail.com)
  */
@@ -342,8 +342,8 @@ public class GitFastReword implements AutoCloseable {
                     printErrMsg(commit.getName() + " has no parents, cannot be reworded", LogConstants.SKIP);
                 } else if (commit.getParentCount() == 1 || allowRewordMergeCommits) {
                     commitsToReword.put(commit.getId(), newCommitMsg);
-                } else if (commit.getParentCount() > 2) {
-                    printErrMsg(commit.getName() + " is merge commit", allowRewordMergeCommits ? LogConstants.WARN : LogConstants.SKIP);
+                } else if (commit.getParentCount() >= 2) {
+                    printErrMsg(commit.getName() + " is merge commit", LogConstants.SKIP);
                 }
             }
         }
