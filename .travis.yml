@@ -2,6 +2,8 @@ language: java
 jdk:
   - openjdk11
 
+
 script:
+  - ./gradlew test
   - ./test-scripts/test-git-fast-reword.sh
   - ./test-scripts/test-git-rebase.sh

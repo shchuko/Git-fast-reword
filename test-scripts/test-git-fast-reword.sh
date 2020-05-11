@@ -30,7 +30,7 @@ git config --local user.name "SomeUserName"
 git config --local user.email "some@user.email"
 
 echo
-echo "Measuring Git-fast-reword execution time..."
+echo "Measuring 'Git-fast-reword' execution time..."
 time "$GIT_FAST_REWORD_ROOT/bin/Git-fast-reword" "$COMMIT_HEAD_LIKE_ID" "$COMMIT_MSG"
 
 echo
