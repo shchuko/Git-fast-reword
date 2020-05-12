@@ -124,7 +124,7 @@ public class GitFastRewordCli {
     private static final String ALLOW_REWORD_MERGES_OPT_LONG = "reword-merges";
     private static final String ALLOW_REWORD_MERGES_OPT_INFO = "Allow reword merge commits";
 
-    private static final String USAGE = "Git-fast-reword {COMMIT-ID MSG}|{COMMITS-LIST-FILE-PATH} [OPTIONS]";
+    private static final String USAGE = "git-fast-reword {COMMIT-ID MSG}|{COMMITS-LIST-FILE-PATH} [OPTIONS]";
 
     private static final int EXIT_SUCCESS = 0;
     private static final int EXIT_FAILURE = 1;
