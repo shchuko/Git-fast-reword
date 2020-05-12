@@ -104,7 +104,7 @@ public class GitFastReword implements AutoCloseable {
      * @param commitRevStr A string to identify the commit (sha-1 hash, HEAD^2, ...)
      * @param newMessage   New commit message
      * @throws RepositoryNotOpenedException If the repository is not opened (by {@link #openRepository(Path)})
-     * @throws GitOperationFailureException   In case of any operations errors (ex. commit not exists)
+     * @throws GitOperationFailureException In case of any operations errors (ex. commit not exists)
      */
     public void reword(String commitRevStr, String newMessage) throws RepositoryNotOpenedException, GitOperationFailureException {
         Map<String, String> map = new HashMap<>();
@@ -117,7 +117,7 @@ public class GitFastReword implements AutoCloseable {
      *
      * @param commitsData Key - string to identify the commit (sha-1 hash, HEAD^2, ...), value - new commit message
      * @throws RepositoryNotOpenedException If the repository is not opened (by {@link #openRepository(Path)})
-     * @throws GitOperationFailureException   In case of any operations errors (ex. rebase not finished/commit not found)
+     * @throws GitOperationFailureException In case of any operations errors (ex. rebase not finished/commit not found)
      */
     public void reword(Map<String, String> commitsData) throws RepositoryNotOpenedException, GitOperationFailureException {
         try {
@@ -197,8 +197,6 @@ public class GitFastReword implements AutoCloseable {
         }
         userName = null;
         userEmail = null;
-        infoPrintStream = null;
-        errPrintStream = null;
         reset();
     }
 
@@ -417,7 +415,7 @@ public class GitFastReword implements AutoCloseable {
         if (visitedCommits.containsKey(oldCommitId)) {
             ObjectId newCommitId = visitedCommits.get(oldCommitId);
 
-            String refLogMsg = RefLogConstants.REBASE_RESET + "'" + newCommitId.getName().substring(0, 8) + "'";
+            String refLogMsg = RefLogConstants.REBASE_RESET + "'" + newCommitId.getName() + "'";
             updateRef(Constants.HEAD, newCommitId, true, refLogMsg);
             printInfoMsg(refLogMsg, LogConstants.INFO);
 
@@ -426,7 +424,7 @@ public class GitFastReword implements AutoCloseable {
 
         RevCommit oldCommit = walk.parseCommit(oldCommitId);
         if (oldCommit.getCommitTime() < commitRebaseOntoCommitTime) {
-            String refLogMsg = RefLogConstants.REBASE_RESET + "'" + oldCommitId.getName().substring(0, 8) + "'";
+            String refLogMsg = RefLogConstants.REBASE_RESET + "'" + oldCommitId.getName() + "'";
             updateRef(Constants.HEAD, oldCommitId, true, refLogMsg);
             printInfoMsg(refLogMsg, LogConstants.INFO);
             visitedCommits.put(oldCommitId, oldCommitId);
@@ -561,6 +559,7 @@ public class GitFastReword implements AutoCloseable {
         static final String WARN = "[ Warn ]";
         static final String INFO = "[ Info ]";
     }
+
     private static class RefLogConstants {
         static final String RESET = "reset: moving to ";
         static final String REBASE_START = "rebase (start): checkout ";

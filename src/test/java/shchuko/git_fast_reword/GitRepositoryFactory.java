@@ -6,6 +6,7 @@ import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.merge.MergeStrategy;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.nio.file.Path;
 
 /**
@@ -18,7 +19,8 @@ public class GitRepositoryFactory {
         ONE_BRANCH_FIVE_COMMITS,
         NOT_MERGED_BRANCHES,
         MERGED_BRANCHES,
-        MERGED_ORPHAN
+        MERGED_ORPHAN,
+        MERGE_CONFLICT
     }
 
 /* - EMPTY -
@@ -92,6 +94,8 @@ public class GitRepositoryFactory {
                 return getMergedBranchesRepo(root);
             case MERGED_ORPHAN:
                 return getMergedOrphanRepo(root);
+            case MERGE_CONFLICT:
+                return getMergeConflictRepo(root);
             default:
                 return null;
         }
@@ -225,4 +229,44 @@ public class GitRepositoryFactory {
         }
         return root.toPath();
     }
+
+    private static Path getMergeConflictRepo(File root) {
+        final String conflictingFileName = "conflictingFileName";
+        if (root == null) {
+            return null;
+        }
+
+        try (Git git = Git.init().setDirectory(root).call()) {
+            git.commit().setAllowEmpty(true).setMessage("Initial on master").call();
+
+            git.checkout().setCreateBranch(true).setName("b1").call();
+            File conflictingFileOnB1 = new File(root, conflictingFileName);
+            if (!conflictingFileOnB1.createNewFile()) {
+                return null;
+            }
+            try (FileWriter fileWriter = new FileWriter(conflictingFileOnB1)){
+                fileWriter.write("Contents on b1 branch");
+            }
+            git.add().addFilepattern(conflictingFileName).call();
+            git.commit().setAllowEmpty(false).setMessage("Create conflicting file on b1").call();
+
+            git.checkout().setCreateBranch(false).setName("master").call();
+            File conflictingFileOnMaster = new File(root, conflictingFileName);
+            if (!conflictingFileOnMaster.createNewFile()) {
+                return null;
+            }
+            try (FileWriter fileWriter = new FileWriter(conflictingFileOnMaster)){
+                fileWriter.write("Contents on master branch");
+            }
+            git.add().addFilepattern(conflictingFileName).call();
+            git.commit().setAllowEmpty(false).setMessage("Create conflicting file on master").call();
+
+            ObjectId b1Id = git.getRepository().resolve("b1");
+            git.merge().setMessage("Merge branch 'b1' with conflict").include(b1Id).call();
+        } catch (Exception e) {
+            return null;
+        }
+        return root.toPath();
+    }
+
 }

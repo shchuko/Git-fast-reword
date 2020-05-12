@@ -13,19 +13,16 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.io.*;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Vladislav Yaroahshchuk (yaroshchuk2000@gmail.com)
  */
 public class GitFastRewordUnitTests {
+    private static final String MY_EXISTING_REPO_URI = "https://github.com/shchuko/ScratchedHologramFrom3D.git";
+
     private static final String NOT_EXISTING_DIR_NAME = "notExistingDirPrivet";
     private File tempRepoDir;
 
@@ -153,8 +150,24 @@ public class GitFastRewordUnitTests {
         gitFastReword.close();
     }
 
+    @Test(expected = GitOperationFailureException.class)
+    public void rewordSimulateUnresolvedMergeConflict()
+            throws RepositoryNotOpenedException, GitOperationFailureException, IOException, RepositoryNotFoundException {
+        Path repoPath = GitRepositoryFactory.create(GitRepositoryFactory.RepoTypes.MERGE_CONFLICT, tempRepoDir);
+        Assert.assertNotNull("Repository creation unsuccessful", repoPath);
+
+        GitFastReword gitFastReword = new GitFastReword();
+        gitFastReword.openRepository(repoPath);
+
+
+        gitFastReword.reword("HEAD", "SomeHeadMsg");
+        gitFastReword.close();
+
+        tempRoot.delete();
+    }
+
     @Test
-    public void rewordNotExistingRefStr()
+    public void rewordNotExistingCommit()
             throws RepositoryNotOpenedException, GitOperationFailureException, IOException, RepositoryNotFoundException {
         Path repoPath = GitRepositoryFactory.create(GitRepositoryFactory.RepoTypes.ONE_BRANCH_FIVE_COMMITS, tempRepoDir);
         Assert.assertNotNull("Repository creation unsuccessful", repoPath);
@@ -288,7 +301,7 @@ public class GitFastRewordUnitTests {
 //
 //        * (HEAD -> master) Commit 5
 //        * Commit 4
-//        * Commit 3                  ->[reword]->"HEAD~2 commit message"
+//        * Commit 3 ->[reword]->"HEAD~2 commit message"
 //        * Commit 2
 //        * Commit 1
 
@@ -546,7 +559,11 @@ public class GitFastRewordUnitTests {
         commitsToReword.put(b2HeadHash, "won't be written b2 head message");
         commitsToReword.put(commitToRewordIdent, commitToRewordMsg);
 
-        try (GitFastReword gitFastReword = new GitFastReword()){
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        PrintStream errPrintStream = new PrintStream(byteArrayOutputStream, true);
+        try (GitFastReword gitFastReword = new GitFastReword()) {
+            gitFastReword.setErrPrintStream(errPrintStream);
             gitFastReword.openRepository(repoPath);
             gitFastReword.reword(commitsToReword);
         }
@@ -575,6 +592,7 @@ public class GitFastRewordUnitTests {
         Assert.assertEquals(masterMessagesExpected, masterMessagesAfterReword);
         Assert.assertEquals(b1MessagesBeforeReword, b1MessagesAfterReword);
         Assert.assertEquals(b2MessagesBeforeReword, b2MessagesAfterReword);
+        Assert.assertFalse(byteArrayOutputStream.toString().isBlank());
     }
 
     @Test
@@ -620,7 +638,7 @@ public class GitFastRewordUnitTests {
             return;
         }
 
-        try (GitFastReword gitFastReword = new GitFastReword()){
+        try (GitFastReword gitFastReword = new GitFastReword()) {
             gitFastReword.openRepository(repoPath);
             gitFastReword.reword(commitsToReword);
         }
@@ -637,7 +655,7 @@ public class GitFastRewordUnitTests {
             git.checkout().setName("master").call();
 
             Repository repository = git.getRepository();
-            try (RevWalk revWalk = new RevWalk(repository)){
+            try (RevWalk revWalk = new RevWalk(repository)) {
                 for (var mapEntry : commitsToReword.entrySet()) {
                     String expectedMsg = mapEntry.getValue();
                     String actualMsg = revWalk.parseCommit(repository.resolve(mapEntry.getKey())).getFullMessage();
@@ -654,6 +672,34 @@ public class GitFastRewordUnitTests {
         Assert.assertEquals(b1MessagesBeforeReword, b1MessagesAfterReword);
         Assert.assertEquals(b2MessagesBeforeReword, b2MessagesAfterReword);
     }
+
+    @Test(expected = GitOperationFailureException.class)
+    public void rewordNoCommonCommitsAncestorTest()
+            throws RepositoryNotOpenedException, GitOperationFailureException, IOException, RepositoryNotFoundException {
+//        On branch 'master'
+//
+//        * (HEAD -> master) 3rd on master
+//        *   Merge branch 'orphan_b'
+//        |\
+//        | * (orphan_b) 2nd on orphan_b    ->[reword]->[no common ancestor]
+//        | * 1st on orphan_b
+//        * 3rd on master                   ->[reword]->[no common ancestor]
+//        * 2nd on master
+//        * 1st on master
+        Path repoPath = GitRepositoryFactory.create(GitRepositoryFactory.RepoTypes.MERGED_ORPHAN, tempRepoDir);
+        Assert.assertNotNull("Repository creation unsuccessful", repoPath);
+
+        Map<String, String> commitsToReword = new HashMap<>();
+        commitsToReword.put("HEAD~1^2", "2nd on orphan_b reword");
+        commitsToReword.put("HEAD~2", "3rd on master reword");
+
+        try (GitFastReword gitFastReword = new GitFastReword()) {
+            gitFastReword.openRepository(repoPath);
+            // No common ancestor, throws an exception
+            gitFastReword.reword(commitsToReword);
+        }
+    }
+
 
     @Test
     public void rewordOrphanTest()
@@ -686,7 +732,7 @@ public class GitFastRewordUnitTests {
             return;
         }
 
-        try (GitFastReword gitFastReword = new GitFastReword()){
+        try (GitFastReword gitFastReword = new GitFastReword()) {
             gitFastReword.openRepository(repoPath);
             gitFastReword.reword(commitsToReword);
         }
@@ -714,5 +760,34 @@ public class GitFastRewordUnitTests {
         }
 
         Assert.assertEquals(orphanBranchMessagesBeforeReword, orphanBranchMessagesAfterReword);
+    }
+
+    @Test
+    public void rewordDfsStopOnCommitTimestampTest()
+            throws IOException, RepositoryNotFoundException, RepositoryNotOpenedException, GitOperationFailureException {
+        try (Git git = Git.cloneRepository().setURI(MY_EXISTING_REPO_URI).setDirectory(tempRepoDir).call()) {
+            git.checkout().setName("master").call();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        final String commitHash = "d0dd265e92e28924122fcd5841fa5e8c1f52e814";
+        final String commitMessage = "Add ScratchProjectionMaths::CScratchProjectionBuilder and reword a commit!";
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        PrintStream printStream = new PrintStream(byteArrayOutputStream, true);
+        try (GitFastReword gitFastReword = new GitFastReword()) {
+            gitFastReword.setInfoPrintStream(printStream);
+            gitFastReword.setErrPrintStream(printStream);
+            gitFastReword.openRepository(tempRepoDir.toPath());
+            gitFastReword.reword(commitHash, commitMessage);
+        }
+
+        // GitFastReword will find parent of 6788ba863f8388a19de7c09d2f7f404eb4e132fc and use it as 'onto' for rebase
+        // After it will stop dfs on all commits older than 'onto', the first one is 2c027b8e6b0dcd673a4166faa99c4dd95e11f496
+        String expectedLogBeginning = "[ Info ] rebase (start): checkout 6788ba863f8388a19de7c09d2f7f404eb4e132fc" +
+                System.lineSeparator() + "[ Info ] rebase (reset): '2c027b8e6b0dcd673a4166faa99c4dd95e11f496'";
+        String actualLogBeginning = byteArrayOutputStream.toString().substring(0, expectedLogBeginning.length());
+        Assert.assertEquals(expectedLogBeginning, actualLogBeginning);
     }
 }
