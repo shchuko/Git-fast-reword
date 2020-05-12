@@ -768,7 +768,8 @@ public class GitFastRewordUnitTests {
         try (Git git = Git.cloneRepository().setURI(MY_EXISTING_REPO_URI).setDirectory(tempRepoDir).call()) {
             git.checkout().setName("master").call();
         } catch (Exception e) {
-            e.printStackTrace();
+            Assert.fail("Error while cloning test repo");
+            return;
         }
 
         final String commitHash = "d0dd265e92e28924122fcd5841fa5e8c1f52e814";
@@ -789,5 +790,72 @@ public class GitFastRewordUnitTests {
                 System.lineSeparator() + "[ Info ] rebase (reset): '2c027b8e6b0dcd673a4166faa99c4dd95e11f496'";
         String actualLogBeginning = byteArrayOutputStream.toString().substring(0, expectedLogBeginning.length());
         Assert.assertEquals(expectedLogBeginning, actualLogBeginning);
+    }
+
+    @Test
+    public void rewordNullCommitIdentValue()
+            throws RepositoryNotOpenedException, GitOperationFailureException, IOException, RepositoryNotFoundException {
+        Path repoPath = GitRepositoryFactory.create(GitRepositoryFactory.RepoTypes.ONE_BRANCH_FIVE_COMMITS, tempRepoDir);
+        Assert.assertNotNull("Repository creation unsuccessful", repoPath);
+
+        ObjectId headIdBeforeReword;
+        try (Git git = Git.open(repoPath.toFile())) {
+            headIdBeforeReword = git.getRepository().resolve(Constants.HEAD);
+        } catch (Exception e) {
+            Assert.fail("Error while reading test repo before reword");
+            return;
+        }
+
+        String commitIdent = null;
+        String commitMessage = "SomeMessage";
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        PrintStream errPrintStream = new PrintStream(byteArrayOutputStream, true);
+        try (GitFastReword gitFastReword = new GitFastReword()) {
+            gitFastReword.setErrPrintStream(errPrintStream);
+            gitFastReword.openRepository(repoPath);
+            gitFastReword.reword(commitIdent, commitMessage);
+        }
+
+        ObjectId headIdAfterReword;
+        try (Git git = Git.open(repoPath.toFile())) {
+            headIdAfterReword = git.getRepository().resolve(Constants.HEAD);
+        }
+
+        Assert.assertFalse(byteArrayOutputStream.toString().isBlank());
+        Assert.assertEquals(headIdBeforeReword, headIdAfterReword);
+    }
+
+    @Test
+    public void rewordNullCommitMessage() throws IOException, RepositoryNotFoundException, RepositoryNotOpenedException, GitOperationFailureException {
+        Path repoPath = GitRepositoryFactory.create(GitRepositoryFactory.RepoTypes.ONE_BRANCH_FIVE_COMMITS, tempRepoDir);
+        Assert.assertNotNull("Repository creation unsuccessful", repoPath);
+
+        ObjectId headIdBeforeReword;
+        try (Git git = Git.open(repoPath.toFile())) {
+            headIdBeforeReword = git.getRepository().resolve(Constants.HEAD);
+        } catch (Exception e) {
+            Assert.fail("Error while reading test repo before reword");
+            return;
+        }
+
+        String commitIdent = "HEAD";
+        String commitMessage = null;
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        PrintStream errPrintStream = new PrintStream(byteArrayOutputStream, true);
+        try (GitFastReword gitFastReword = new GitFastReword()) {
+            gitFastReword.setErrPrintStream(errPrintStream);
+            gitFastReword.openRepository(repoPath);
+            gitFastReword.reword(commitIdent, commitMessage);
+        }
+
+        ObjectId headIdAfterReword;
+        try (Git git = Git.open(repoPath.toFile())) {
+            headIdAfterReword = git.getRepository().resolve(Constants.HEAD);
+        }
+
+        Assert.assertFalse(byteArrayOutputStream.toString().isBlank());
+        Assert.assertEquals(headIdBeforeReword, headIdAfterReword);
     }
 }

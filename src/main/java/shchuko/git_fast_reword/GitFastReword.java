@@ -155,7 +155,7 @@ public class GitFastReword implements AutoCloseable {
             }
 
             if (commitsToReword.isEmpty()) {
-                printInfoMsg("Nothing to reword", LogConstants.INFO);
+                printInfoMsg("Nothing to reword", LogConstants.INFO.getVal());
             } else {
                 commitRebaseOntoId = null;
                 try {
@@ -300,26 +300,26 @@ public class GitFastReword implements AutoCloseable {
         // Filtering commits exist in this repository
         for (var item : commitsData.entrySet()) {
             if (item.getKey() == null || item.getValue() == null) {
-                printErrMsg("Commit with null field(s)", LogConstants.SKIP);
+                printErrMsg("Commit with null field(s)", LogConstants.SKIP.getVal());
                 continue;
             }
 
             if (item.getValue().isEmpty()) {
-                printErrMsg(item.getKey() + " has empty message", LogConstants.WARN);
+                printErrMsg(item.getKey() + " has empty message", LogConstants.WARN.getVal());
             }
 
             try {
                 ObjectId objectId = repository.resolve(item.getKey());
 
                 if (objectId == null || repository.open(objectId).getType() != Constants.OBJ_COMMIT) {
-                    printErrMsg(item.getKey() + " is not a commit", LogConstants.SKIP);
+                    printErrMsg(item.getKey() + " not found", LogConstants.SKIP.getVal());
                 } else {
                     existCommits.put(objectId, item.getValue());
                 }
             } catch (AmbiguousObjectException e) {
-                printErrMsg(item.getKey() + " more than one object which matches", LogConstants.SKIP);
+                printErrMsg(item.getKey() + " more than one object which matches", LogConstants.SKIP.getVal());
             } catch (IOException | RevisionSyntaxException e) {
-                printErrMsg(item.getKey() + " not found", LogConstants.SKIP);
+                printErrMsg(item.getKey() + " not found", LogConstants.SKIP.getVal());
             }
         }
 
@@ -337,11 +337,11 @@ public class GitFastReword implements AutoCloseable {
                 existCommits.remove(commitId);
 
                 if (commit.getParentCount() == 0) {
-                    printErrMsg(commit.getName() + " has no parents, cannot be reworded", LogConstants.SKIP);
+                    printErrMsg(commit.getName() + " has no parents, cannot be reworded", LogConstants.SKIP.getVal());
                 } else if (commit.getParentCount() == 1 || allowRewordMergeCommits) {
                     commitsToReword.put(commit.getId(), newCommitMsg);
                 } else if (commit.getParentCount() >= 2) {
-                    printErrMsg(commit.getName() + " is merge commit", LogConstants.SKIP);
+                    printErrMsg(commit.getName() + " is merge commit", LogConstants.SKIP.getVal());
                 }
             }
         }
@@ -349,7 +349,7 @@ public class GitFastReword implements AutoCloseable {
 
         for (var commit : existCommits.entrySet()) {
             if (!commitsToReword.containsKey(commit.getKey())) {
-                printErrMsg(commit.getKey().getName() + " exists, but not found on current branch", LogConstants.SKIP);
+                printErrMsg(commit.getKey().getName() + " exists, but not found on current branch", LogConstants.SKIP.getVal());
             }
         }
 
@@ -390,7 +390,7 @@ public class GitFastReword implements AutoCloseable {
         visitedCommits.put(commitRebaseOntoId, commitRebaseOntoId);
         String refLogMsg = RefLogConstants.REBASE_START + commitRebaseOntoId.getName();
         updateRef(Constants.HEAD, commitRebaseOntoId, true, refLogMsg);
-        printInfoMsg(refLogMsg, LogConstants.INFO);
+        printInfoMsg(refLogMsg, LogConstants.INFO.getVal());
 
         RevWalk walk = new RevWalk(repository);
         ObjectInserter objectInserter = repository.newObjectInserter();
@@ -417,7 +417,7 @@ public class GitFastReword implements AutoCloseable {
 
             String refLogMsg = RefLogConstants.REBASE_RESET + "'" + newCommitId.getName() + "'";
             updateRef(Constants.HEAD, newCommitId, true, refLogMsg);
-            printInfoMsg(refLogMsg, LogConstants.INFO);
+            printInfoMsg(refLogMsg, LogConstants.INFO.getVal());
 
             return newCommitId;
         }
@@ -426,7 +426,7 @@ public class GitFastReword implements AutoCloseable {
         if (oldCommit.getCommitTime() < commitRebaseOntoCommitTime) {
             String refLogMsg = RefLogConstants.REBASE_RESET + "'" + oldCommitId.getName() + "'";
             updateRef(Constants.HEAD, oldCommitId, true, refLogMsg);
-            printInfoMsg(refLogMsg, LogConstants.INFO);
+            printInfoMsg(refLogMsg, LogConstants.INFO.getVal());
             visitedCommits.put(oldCommitId, oldCommitId);
             return oldCommitId;
         }
@@ -444,8 +444,8 @@ public class GitFastReword implements AutoCloseable {
 
         String newCommitMessage = commitsToReword.get(oldCommit.getId());
         if (!newParentCreated && newCommitMessage == null) {
-            updateRef(Constants.HEAD, oldCommitId, true, RefLogConstants.REBASE_FAST_FORWARD);
-            printInfoMsg(RefLogConstants.REBASE_FAST_FORWARD, LogConstants.INFO);
+            updateRef(Constants.HEAD, oldCommitId, true, RefLogConstants.REBASE_FAST_FORWARD.getVal());
+            printInfoMsg(RefLogConstants.REBASE_FAST_FORWARD.getVal(), LogConstants.INFO.getVal());
             return oldCommitId;
         }
 
@@ -468,7 +468,7 @@ public class GitFastReword implements AutoCloseable {
             refLogMsg = RefLogConstants.REBASE_PICK + newCommit.getShortMessage();
         }
         updateRef(Constants.HEAD, newCommitId, true, refLogMsg);
-        printInfoMsg(refLogMsg, LogConstants.INFO);
+        printInfoMsg(refLogMsg, LogConstants.INFO.getVal());
 
         return newCommitId;
     }
@@ -480,7 +480,7 @@ public class GitFastReword implements AutoCloseable {
         try {
             updateRef(Constants.HEAD, currentBranchFullName, false, RefLogConstants.RESET + currentBranchFullName);
         } catch (IOException e) {
-            printErrMsg("Repository recover unsuccessful", LogConstants.ERR);
+            printErrMsg("Repository recover unsuccessful", LogConstants.ERR.getVal());
             return false;
         }
         return true;
@@ -496,11 +496,11 @@ public class GitFastReword implements AutoCloseable {
 
         String branchRefLogMsg = RefLogConstants.REBASE_FINISH + currentBranchFullName + " onto " + commitRebaseOntoId.getName();
         updateRef(currentBranchFullName, lastCommitId, false, branchRefLogMsg);
-        printInfoMsg(branchRefLogMsg, LogConstants.INFO);
+        printInfoMsg(branchRefLogMsg, LogConstants.INFO.getVal());
 
         String headRefLogMsg = RefLogConstants.REBASE_FINISH + "returning to " + currentBranchFullName;
         updateRef(Constants.HEAD, currentBranchFullName, false, headRefLogMsg);
-        printInfoMsg(headRefLogMsg, LogConstants.INFO);
+        printInfoMsg(headRefLogMsg, LogConstants.INFO.getVal());
 
     }
 
@@ -553,20 +553,50 @@ public class GitFastReword implements AutoCloseable {
         }
     }
 
-    private static class LogConstants {
-        static final String SKIP = "[ Skip ]";
-        static final String ERR = "[ Err  ]";
-        static final String WARN = "[ Warn ]";
-        static final String INFO = "[ Info ]";
+    private enum LogConstants {
+        SKIP("[ Skip ]"),
+        ERR("[ Err  ]"),
+        WARN("[ Warn ]"),
+        INFO("[ Info ]");
+
+        private final String val;
+
+        LogConstants(String val) {
+            this.val = val;
+        }
+
+        public String getVal() {
+            return val;
+        }
+
+        @Override
+        public String toString() {
+            return val;
+        }
     }
 
-    private static class RefLogConstants {
-        static final String RESET = "reset: moving to ";
-        static final String REBASE_START = "rebase (start): checkout ";
-        static final String REBASE_FAST_FORWARD = "rebase: fast-forward";
-        static final String REBASE_PICK = "rebase (pick): ";
-        static final String REBASE_REWORD = "rebase (reword): ";
-        static final String REBASE_RESET = "rebase (reset): ";
-        static final String REBASE_FINISH = "rebase (finish): ";
+    private enum RefLogConstants {
+        RESET("reset: moving to "),
+        REBASE_START("rebase (start): checkout "),
+        REBASE_FAST_FORWARD("rebase: fast-forward"),
+        REBASE_PICK("rebase (pick): "),
+        REBASE_REWORD("rebase (reword): "),
+        REBASE_RESET("rebase (reset): "),
+        REBASE_FINISH("rebase (finish): ");
+
+        private final String val;
+
+        RefLogConstants(String val) {
+            this.val = val;
+        }
+
+        public String getVal() {
+            return val;
+        }
+
+        @Override
+        public String toString() {
+            return val;
+        }
     }
 }
