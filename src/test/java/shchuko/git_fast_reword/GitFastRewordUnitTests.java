@@ -263,7 +263,7 @@ public class GitFastRewordUnitTests {
         List<String> messagesBeforeReword = new ArrayList<>();
         List<RevTree> treesBeforeReword = new ArrayList<>();
         try (Git git = Git.open(repoPath.toFile())) {
-            var log = git.log().call();
+            Iterable<RevCommit> log = git.log().call();
             log.forEach(commit -> messagesBeforeReword.add(commit.getFullMessage()));
             log.forEach(commit -> treesBeforeReword.add(commit.getTree()));
         } catch (Exception e) {
@@ -279,7 +279,7 @@ public class GitFastRewordUnitTests {
         List<String> messagesAfterReword = new ArrayList<>();
         List<RevTree> treesAfterReword = new ArrayList<>();
         try (Git git = Git.open(repoPath.toFile())) {
-            var log = git.log().call();
+            Iterable<RevCommit> log = git.log().call();
             log.forEach(commit -> messagesAfterReword.add(commit.getFullMessage()));
             log.forEach(commit -> treesAfterReword.add(commit.getTree()));
         } catch (Exception e) {
@@ -592,7 +592,7 @@ public class GitFastRewordUnitTests {
         Assert.assertEquals(masterMessagesExpected, masterMessagesAfterReword);
         Assert.assertEquals(b1MessagesBeforeReword, b1MessagesAfterReword);
         Assert.assertEquals(b2MessagesBeforeReword, b2MessagesAfterReword);
-        Assert.assertFalse(byteArrayOutputStream.toString().isBlank());
+        Assert.assertFalse(byteArrayOutputStream.toString().trim().isEmpty());
     }
 
     @Test
@@ -656,7 +656,7 @@ public class GitFastRewordUnitTests {
 
             Repository repository = git.getRepository();
             try (RevWalk revWalk = new RevWalk(repository)) {
-                for (var mapEntry : commitsToReword.entrySet()) {
+                for (Map.Entry<String, String> mapEntry : commitsToReword.entrySet()) {
                     String expectedMsg = mapEntry.getValue();
                     String actualMsg = revWalk.parseCommit(repository.resolve(mapEntry.getKey())).getFullMessage();
                     Assert.assertEquals(expectedMsg, actualMsg);
@@ -746,7 +746,7 @@ public class GitFastRewordUnitTests {
 
             Repository repository = git.getRepository();
             try (RevWalk revWalk = new RevWalk(repository)) {
-                for (var mapEntry : commitsToReword.entrySet()) {
+                for (Map.Entry<String, String> mapEntry : commitsToReword.entrySet()) {
                     String expectedMsg = mapEntry.getValue();
                     String actualMsg = revWalk.parseCommit(repository.resolve(mapEntry.getKey())).getFullMessage();
                     Assert.assertEquals(expectedMsg, actualMsg);
@@ -822,7 +822,7 @@ public class GitFastRewordUnitTests {
             headIdAfterReword = git.getRepository().resolve(Constants.HEAD);
         }
 
-        Assert.assertFalse(byteArrayOutputStream.toString().isBlank());
+        Assert.assertFalse(byteArrayOutputStream.toString().trim().isEmpty());
         Assert.assertEquals(headIdBeforeReword, headIdAfterReword);
     }
 
@@ -855,7 +855,7 @@ public class GitFastRewordUnitTests {
             headIdAfterReword = git.getRepository().resolve(Constants.HEAD);
         }
 
-        Assert.assertFalse(byteArrayOutputStream.toString().isBlank());
+        Assert.assertFalse(byteArrayOutputStream.toString().trim().isEmpty());
         Assert.assertEquals(headIdBeforeReword, headIdAfterReword);
     }
 }

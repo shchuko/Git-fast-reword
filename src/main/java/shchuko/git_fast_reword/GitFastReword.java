@@ -298,7 +298,7 @@ public class GitFastReword implements AutoCloseable {
         Map<ObjectId, String> existCommits = new HashMap<>();
 
         // Filtering commits exist in this repository
-        for (var item : commitsData.entrySet()) {
+        for (Map.Entry<String, String> item : commitsData.entrySet()) {
             if (item.getKey() == null || item.getValue() == null) {
                 printErrMsg("Commit with null field(s)", LogConstants.SKIP.getVal());
                 continue;
@@ -347,7 +347,7 @@ public class GitFastReword implements AutoCloseable {
         }
         walk.dispose();
 
-        for (var commit : existCommits.entrySet()) {
+        for (Map.Entry<ObjectId, String> commit : existCommits.entrySet()) {
             if (!commitsToReword.containsKey(commit.getKey())) {
                 printErrMsg(commit.getKey().getName() + " exists, but not found on current branch", LogConstants.SKIP.getVal());
             }
@@ -363,7 +363,7 @@ public class GitFastReword implements AutoCloseable {
     private void findCommitRebaseOnto() throws IOException {
         RevWalk walk = new RevWalk(repository);
         walk.setRevFilter(RevFilter.MERGE_BASE);
-        for (var commitId : commitsToReword.keySet()) {
+        for (ObjectId commitId : commitsToReword.keySet()) {
             walk.markStart(walk.parseCommit(commitId));
         }
 
@@ -433,7 +433,7 @@ public class GitFastReword implements AutoCloseable {
 
         List<ObjectId> parentsIds = new ArrayList<>();
         boolean newParentCreated = false;
-        for (var parent : oldCommit.getParents()) {
+        for (RevCommit parent : oldCommit.getParents()) {
             ObjectId newParentId = dfsReword(walk, objectInserter, parent.getId());
             parentsIds.add(newParentId);
 

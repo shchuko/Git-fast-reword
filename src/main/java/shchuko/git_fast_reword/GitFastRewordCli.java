@@ -64,12 +64,12 @@ public class GitFastRewordCli {
         String[] pureArgs = cmd.getArgs();
 
         if (pureArgs.length == 1) {
-            loadFromFile(pureArgs[0].strip());
+            loadFromFile(pureArgs[0].trim());
             return true;
         }
 
         if (pureArgs.length >= 2) {
-            commitsToReword.put(pureArgs[0].strip(), pureArgs[1].strip().concat(System.lineSeparator()));
+            commitsToReword.put(pureArgs[0].trim(), pureArgs[1].trim().concat(System.lineSeparator()));
             return true;
         }
 
@@ -84,7 +84,7 @@ public class GitFastRewordCli {
                 String[] rewordInfo = fileToHashPath.split(",");
 
                 if (rewordInfo.length == 2) {
-                    commitsToReword.put(rewordInfo[0].strip(), rewordInfo[1].strip().concat(System.lineSeparator()));
+                    commitsToReword.put(rewordInfo[0].trim(), rewordInfo[1].trim().concat(System.lineSeparator()));
                 }
             }
         } catch (IOException e) {
